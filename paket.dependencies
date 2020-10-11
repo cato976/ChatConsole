@@ -1,0 +1,7 @@
+framework: netcoreapp31
+source https://nuget.org/api/v2
+
+nuget NUnit.Runners
+nuget NUnit
+nuget NUnit3TestAdapter
+nuget Should
