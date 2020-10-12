@@ -27,7 +27,6 @@ namespace ConsoleApp1
 
                 NetworkStream networkStream = clientSocket.GetStream();
                 byte[] bytesFrom = new byte[clientSocket.ReceiveBufferSize];
-                Console.WriteLine(clientSocket.ReceiveBufferSize);
                 networkStream.Read(bytesFrom, 0, clientSocket.ReceiveBufferSize);
                 dataFromClient = Encoding.ASCII.GetString(bytesFrom);
                 dataFromClient = dataFromClient.Substring(0, dataFromClient.IndexOf("$"));
