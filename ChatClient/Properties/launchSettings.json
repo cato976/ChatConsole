@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ChatClient": {
+      "commandName": "Project",
+      "commandLineArgs": "--chat-name=dodo"
+    }
+  }
+}

@@ -4,34 +4,33 @@ namespace ChatClient
     using System.IO;
     using System.Net;
     using System.Net.Sockets;
+    using System.Reflection;
+    using System.Text;
+    using System.Threading;
 
     public class ChatClient
     {
+        static TcpClient clientSocket = new TcpClient();
+        static NetworkStream serverStream = default(NetworkStream);
+        static string readData = null;
+        static string chatName = null;
+        static Thread ctThread = new Thread(getMessage);
+        static string clientMessage;
+
         static void Main(string[] args)
         {
-            TcpClient socketForServer;
+            bool showHelp = false;
             bool status = true;
 
-            try 
-            {
-                socketForServer = new TcpClient("localhost", 8888);
-                Console.WriteLine("Connected to Server");
-            }
-            catch
-            {
-                Console.WriteLine("Failed to Connect to server{0}:999", "localhost");
-                return;
-            }
+            NDesk.Options.OptionSet argParser = new NDesk.Options.OptionSet()
+                .Add("chat-name=", "chat name to use",
+                        delegate(string v) { chatName = v; })
+                .Add("h|?|help", delegate(string v) { showHelp = (v != null); });
+            argParser.Parse(args);
 
-            NetworkStream networkStream = socketForServer.GetStream();
-            StreamReader streamReader = new StreamReader(networkStream);
-            StreamWriter streamWriter = new StreamWriter(networkStream);
-
-            try
+            if (!showHelp && (!string.IsNullOrEmpty(chatName)))
             {
-                string clientMessage = string.Empty;
-                string serverMessage = string.Empty;
-
+                ConnectToServer();
                 while(status)
                 {
                     Console.Write("Client: ");
@@ -39,26 +38,76 @@ namespace ChatClient
                     if((clientMessage == "bye") || (clientMessage == "BYE"))
                     {
                         status = false;
-                        streamWriter.WriteLine("bye");
-                        streamWriter.Flush();
                     }
                     if(clientMessage != "bye" && clientMessage != "BYE")
                     {
-                        streamWriter.WriteLine(clientMessage);
-                        streamWriter.Flush();
-                        serverMessage = streamReader.ReadLine();
-                        Console.WriteLine("Server:"+serverMessage);
+                        SendMessage();
                     }
                 }
-            }
-            catch
-            {
-                Console.WriteLine("Exception reading from server");
-            }
 
-            streamReader.Close();
-            networkStream.Close();
-            streamWriter.Close();
+                ctThread.Abort();
+            }
+            else
+            {
+                Console.WriteLine($"Usage: {Assembly.GetExecutingAssembly().GetName().Name} [OPTION]...");
+                Console.WriteLine("A chat client");
+                Console.WriteLine("Options:");
+                argParser.WriteOptionDescriptions(Console.Out);
+            }
+        }
+
+        private static void ConnectToServer()
+        {
+            readData = "Conected to Chat Server ...";
+            msg();
+            clientSocket.Connect("127.0.0.1", 8888);
+            serverStream = clientSocket.GetStream();
+
+            byte[] outStream = Encoding.ASCII.GetBytes(chatName + "$");
+            serverStream.Write(outStream, 0, outStream.Length);
+            serverStream.Flush();
+
+            ctThread = new Thread(getMessage);
+            ctThread.Start();
+        }
+
+        private static void SendMessage()
+        {
+            byte[] outStream = Encoding.ASCII.GetBytes(clientMessage + "$");
+            serverStream.Write(outStream, 0, outStream.Length);
+            serverStream.Flush();
+        }
+
+        private static void msg()
+        {
+            Console.WriteLine(Environment.NewLine + " >> " + readData);
+        } 
+
+        private static void getMessage()
+        {
+            while (true)
+            {
+                serverStream = clientSocket.GetStream();
+                int buffSize = 0;
+                byte[] inStream = new byte[clientSocket.ReceiveBufferSize];
+                buffSize = clientSocket.ReceiveBufferSize;
+                serverStream.Read(inStream, 0, buffSize);
+
+                int size = 0;
+                foreach(byte b in inStream)
+                {
+                    if (b != 0)
+                    {
+                        size++;
+                    }
+                }
+
+                byte[] inStream2 = new byte[size];
+                Buffer.BlockCopy(inStream, 0, inStream2, 0, size);
+                string returndata = Encoding.ASCII.GetString(inStream2);
+                readData = "" + returndata;
+                msg();
+            }
         }
     }
 }

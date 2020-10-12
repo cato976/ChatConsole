@@ -19,6 +19,7 @@ NUGET
     Microsoft.Win32.Registry (4.7)
       System.Security.AccessControl (>= 4.7)
       System.Security.Principal.Windows (>= 4.7)
+    NDesk.Options.Core (1.2.5)
     NETStandard.Library (2.0.3)
       Microsoft.NETCore.Platforms (>= 1.1)
     NUnit (3.12)

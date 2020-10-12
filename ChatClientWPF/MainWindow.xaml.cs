@@ -66,7 +66,6 @@ namespace ChatClientWPF
                 Buffer.BlockCopy(inStream, 0, inStream2, 0, size);
                 string returndata = Encoding.ASCII.GetString(inStream2);
                 readData = "" + returndata;
-                //readData.Replace('\0', '');
                 msg();
             }
         }
